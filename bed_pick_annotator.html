@@ -15,6 +15,8 @@
   button.primary { background:#1f6fc4; color:#fff; border-color:#1f6fc4; }
   .upbtn { padding:6px 10px; border:1px solid #2e8b57; background:#2e8b57; color:#fff; border-radius:5px; font-size:13px; font-weight:600; text-decoration:none; }
   .upbtn:hover { filter:brightness(0.92); }
+  .infobtn { padding:6px 10px; border:1px solid #cdd3da; background:#fff; color:#1f3b57; border-radius:5px; font-size:13px; font-weight:600; text-decoration:none; }
+  .infobtn:hover { background:#eef1f4; }
   button.act-surface { background:#00b3b3; color:#fff; border-color:#00b3b3; }
   button.act-bed { background:#ff8c00; color:#fff; border-color:#ff8c00; }
   canvas { display:block; background:#222; cursor:crosshair; touch-action:none; }
@@ -30,6 +32,8 @@
   <span class="hint">choose a horizon, then left-click along it &nbsp;&bull;&nbsp; right-drag = pan &nbsp;&bull;&nbsp; wheel = zoom</span>
 </header>
 <div id="bar">
+  <a id="infobtn" class="infobtn" href="index.html" target="_blank" rel="noopener" title="Open the instructions in a new tab">? Instructions</a>
+  <span class="sep"></span>
   <span style="font-size:13px;">Picking:</span>
   <button id="bSurface">Surface (s)</button>
   <button id="bBed">Bed (b)</button>
