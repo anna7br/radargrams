@@ -13,6 +13,8 @@
   button { padding:6px 10px; border:1px solid #bbb; background:#fff; border-radius:5px; cursor:pointer; font-size:13px;}
   button:hover { background:#eef3f8; }
   button.primary { background:#1f6fc4; color:#fff; border-color:#1f6fc4; }
+  .upbtn { padding:6px 10px; border:1px solid #2e8b57; background:#2e8b57; color:#fff; border-radius:5px; font-size:13px; font-weight:600; text-decoration:none; }
+  .upbtn:hover { filter:brightness(0.92); }
   button.act-surface { background:#00b3b3; color:#fff; border-color:#00b3b3; }
   button.act-bed { background:#ff8c00; color:#fff; border-color:#ff8c00; }
   canvas { display:block; background:#222; cursor:crosshair; touch-action:none; }
@@ -40,6 +42,7 @@
   <label class="chk"><input type="checkbox" id="uninterp"> bed not interpretable</label>
   <span style="flex:1"></span>
   <button id="download" class="primary">Download my results (CSV)</button>
+  <a id="uploadbtn" class="upbtn" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload results &rarr;</a>
 </div>
 <canvas id="cv"></canvas>
 <div id="status"></div>
@@ -58,8 +61,7 @@ let W = 1100, H = 660;
 function resize(){ W=Math.max(600,window.innerWidth-2); H=Math.max(380,window.innerHeight-150); cv.width=W; cv.height=H; draw(); }
 window.addEventListener('resize', resize);
 
-let analyst = (prompt("Please enter your name or initials (used in the result file name):","")||"anon")
-              .trim().replace(/[^A-Za-z0-9_-]/g,"_") || "anon";
+let analyst = "";   // asked for at Download time, not before picking
 let active = "surface";
 let idx = 0;
 const ann = {};
@@ -144,6 +146,12 @@ window.addEventListener('keydown', e=>{
 
 function csvField(s){ s=String(s); return '"'+s.replace(/"/g,'""')+'"'; }
 document.getElementById('download').onclick=()=>{
+  if(!analyst){
+    const nm=prompt("Please enter your name or initials (used in the result file name):","");
+    if(nm===null) return;                       // cancelled -> abort download
+    analyst=(nm.trim().replace(/[^A-Za-z0-9_-]/g,"_"))||"anon";
+    status();
+  }
   const rows=[["filename","file_size","file_attributes","region_count","region_id",
                "region_shape_attributes","region_attributes"]];
   IMAGES.forEach(fn=>{
