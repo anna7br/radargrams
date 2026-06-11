@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPR surface &amp; bed picking survey</title>
+<style>
+  :root { font-family: system-ui, sans-serif; }
+  body { margin: 0; color: #111; background: #f5f6f8; }
+  header { padding: 8px 14px; background: #1f3b57; color: #fff; display:flex; gap:14px; align-items:center; flex-wrap:wrap;}
+  header b { font-size: 15px; }
+  #bar { padding: 8px 14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:#fff; border-bottom:1px solid #ddd;}
+  button { padding:6px 10px; border:1px solid #bbb; background:#fff; border-radius:5px; cursor:pointer; font-size:13px;}
+  button:hover { background:#eef3f8; }
+  button.primary { background:#1f6fc4; color:#fff; border-color:#1f6fc4; }
+  button.act-surface { background:#00b3b3; color:#fff; border-color:#00b3b3; }
+  button.act-bed { background:#ff8c00; color:#fff; border-color:#ff8c00; }
+  canvas { display:block; background:#222; cursor:crosshair; touch-action:none; }
+  #status { padding:6px 14px; font-size:13px; color:#333; background:#fff; border-top:1px solid #ddd;}
+  label.chk { font-size:13px; display:flex; gap:5px; align-items:center; }
+  .sep { width:1px; height:22px; background:#ccc; margin:0 4px; }
+  .hint { font-size:12px; color:#cdd; }
+</style>
+</head>
+<body>
+<header>
+  <b>GPR surface &amp; bed picking</b>
+  <span class="hint">choose a horizon, then left-click along it &nbsp;&bull;&nbsp; right-drag = pan &nbsp;&bull;&nbsp; wheel = zoom</span>
+</header>
+<div id="bar">
+  <span style="font-size:13px;">Picking:</span>
+  <button id="bSurface">Surface (s)</button>
+  <button id="bBed">Bed (b)</button>
+  <span class="sep"></span>
+  <button id="prev">&larr; Prev</button>
+  <button id="next">Next &rarr;</button>
+  <button id="undo">Undo point</button>
+  <button id="clear">Clear horizon</button>
+  <button id="fit">Reset view</button>
+  <label class="chk"><input type="checkbox" id="uninterp"> bed not interpretable</label>
+  <span style="flex:1"></span>
+  <button id="download" class="primary">Download my results (CSV)</button>
+</div>
+<canvas id="cv"></canvas>
+<div id="status"></div>
+
+<script src="images.js"></script>
+<script>
+/* ===================== CONFIG: edit if images are hosted elsewhere ===================== */
+const BASE_URL = "";          // "" = same folder as this file; else "https://host/path/"
+let   IMAGES   = (window.IMAGES || []).slice();          // if empty, fetch BASE_URL + "images.json"
+/* ====================================================================================== */
+
+const COLORS = { surface:"#00d6d6", bed:"#ff8c00" };
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let W = 1100, H = 660;
+function resize(){ W=Math.max(600,window.innerWidth-2); H=Math.max(380,window.innerHeight-150); cv.width=W; cv.height=H; draw(); }
+window.addEventListener('resize', resize);
+
+let analyst = (prompt("Please enter your name or initials (used in the result file name):","")||"anon")
+              .trim().replace(/[^A-Za-z0-9_-]/g,"_") || "anon";
+let active = "surface";
+let idx = 0;
+const ann = {};
+let img = new Image();
+let view = {s:1, tx:0, ty:0};
+let panning=false, panStart=null;
+
+async function init(){
+  resize();
+  if (IMAGES.length === 0){
+    try { IMAGES = await (await fetch(BASE_URL+"images.json")).json(); }
+    catch(e){ alert("No image list. Provide images.json next to the images, or set IMAGES at top of file."); return; }
+  }
+  IMAGES.forEach(fn => ann[fn] = ann[fn] || {surface:[], bed:[], uninterp:false, w:0, h:0, loaded:false});
+  setActive("surface"); load(0);
+}
+function setActive(b){ active=b;
+  document.getElementById('bSurface').className = b==="surface"?"act-surface":"";
+  document.getElementById('bBed').className     = b==="bed"?"act-bed":"";
+  status();
+}
+function load(i){
+  if (i<0||i>=IMAGES.length) return; idx=i; const fn=IMAGES[idx];
+  document.getElementById('uninterp').checked = ann[fn].uninterp;
+  img = new Image();
+  img.onload = ()=>{ ann[fn].w=img.naturalWidth; ann[fn].h=img.naturalHeight; ann[fn].loaded=true; fitView(); draw(); };
+  img.onerror = ()=>{ ctx.fillStyle="#fff"; ctx.fillText("Could not load "+fn,20,20); status(); };
+  img.src = BASE_URL + fn; status();
+}
+function fitView(){ const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
+  view.s=s; view.tx=(W-img.naturalWidth*s)/2; view.ty=(H-img.naturalHeight*s)/2; }
+function toImg(cx,cy){ return {x:(cx-view.tx)/view.s, y:(cy-view.ty)/view.s}; }
+function toScr(p){ return {x:view.tx+p.x*view.s, y:view.ty+p.y*view.s}; }
+
+function drawLine(pts,color){
+  if(pts.length){ ctx.lineWidth=2; ctx.strokeStyle=color; ctx.fillStyle=color;
+    ctx.beginPath(); pts.forEach((p,k)=>{const s=toScr(p); k?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y);}); ctx.stroke();
+    pts.forEach(p=>{const s=toScr(p); ctx.beginPath(); ctx.arc(s.x,s.y,3,0,7); ctx.fill();}); }
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(img&&img.complete&&img.naturalWidth)
+    ctx.drawImage(img,0,0,img.naturalWidth,img.naturalHeight,view.tx,view.ty,img.naturalWidth*view.s,img.naturalHeight*view.s);
+  const a=ann[IMAGES[idx]]; if(!a) return;
+  drawLine(a.surface, COLORS.surface); drawLine(a.bed, COLORS.bed);
+  if(a.uninterp){ ctx.fillStyle="rgba(200,0,0,0.85)"; ctx.font="16px sans-serif"; ctx.fillText("marked: bed not interpretable",14,24); }
+}
+function status(){
+  const fn=IMAGES[idx], a=ann[fn]||{surface:[],bed:[]};
+  const done=IMAGES.filter(f=>ann[f]&&((ann[f].surface.length>1&&ann[f].bed.length>1)||ann[f].uninterp)).length;
+  document.getElementById('status').textContent =
+    "Analyst: "+analyst+"  |  image "+(idx+1)+"/"+IMAGES.length+": "+fn+"  |  active: "+active.toUpperCase()
+    +"  |  surface: "+a.surface.length+" pts, bed: "+a.bed.length+" pts  |  completed: "+done+"/"+IMAGES.length;
+}
+cv.addEventListener('mousedown', e=>{
+  if(e.button===2){ panning=true; panStart={x:e.offsetX,y:e.offsetY,tx:view.tx,ty:view.ty}; return; }
+  if(e.button===0){ const p=toImg(e.offsetX,e.offsetY); const a=ann[IMAGES[idx]];
+    p.x=Math.max(0,Math.min(a.w||img.naturalWidth,p.x)); p.y=Math.max(0,Math.min(a.h||img.naturalHeight,p.y));
+    a[active].push(p); draw(); status(); }
+});
+cv.addEventListener('mousemove', e=>{ if(panning){ view.tx=panStart.tx+(e.offsetX-panStart.x); view.ty=panStart.ty+(e.offsetY-panStart.y); draw(); }});
+window.addEventListener('mouseup', ()=>panning=false);
+cv.addEventListener('contextmenu', e=>e.preventDefault());
+cv.addEventListener('wheel', e=>{ e.preventDefault(); const f=e.deltaY<0?1.15:1/1.15;
+  view.tx=e.offsetX-(e.offsetX-view.tx)*f; view.ty=e.offsetY-(e.offsetY-view.ty)*f; view.s*=f; draw(); }, {passive:false});
+
+document.getElementById('bSurface').onclick=()=>setActive("surface");
+document.getElementById('bBed').onclick=()=>setActive("bed");
+document.getElementById('prev').onclick=()=>load(idx-1);
+document.getElementById('next').onclick=()=>load(idx+1);
+document.getElementById('undo').onclick=()=>{ ann[IMAGES[idx]][active].pop(); draw(); status(); };
+document.getElementById('clear').onclick=()=>{ ann[IMAGES[idx]][active]=[]; draw(); status(); };
+document.getElementById('fit').onclick=()=>{ fitView(); draw(); };
+document.getElementById('uninterp').onchange=e=>{ ann[IMAGES[idx]].uninterp=e.target.checked; draw(); status(); };
+window.addEventListener('keydown', e=>{
+  if(e.key==='s') setActive("surface");
+  else if(e.key==='b') setActive("bed");
+  else if(e.key==='ArrowRight') load(idx+1);
+  else if(e.key==='ArrowLeft') load(idx-1);
+  else if((e.ctrlKey||e.metaKey)&&e.key==='z'){ ann[IMAGES[idx]][active].pop(); draw(); status(); }
+});
+
+function csvField(s){ s=String(s); return '"'+s.replace(/"/g,'""')+'"'; }
+document.getElementById('download').onclick=()=>{
+  const rows=[["filename","file_size","file_attributes","region_count","region_id",
+               "region_shape_attributes","region_attributes"]];
+  IMAGES.forEach(fn=>{
+    const a=ann[fn]; if(!a) return;
+    const fa=JSON.stringify({uninterpretable:a.uninterp?"yes":"", img_w:a.w, img_h:a.h});
+    let rid=0;
+    ["surface","bed"].forEach(bnd=>{
+      const pts=a[bnd];
+      if(pts.length>1){
+        const shp=JSON.stringify({name:"polyline",all_points_x:pts.map(p=>Math.round(p.x)),all_points_y:pts.map(p=>Math.round(p.y))});
+        rows.push([fn,-1,fa,1,rid++,shp,JSON.stringify({boundary:bnd})].map(csvField));
+      }
+    });
+    if(rid===0 && a.uninterp) rows.push([fn,-1,fa,0,0,"{}","{}"].map(csvField));
+  });
+  const csv=rows.map(r=>Array.isArray(r)?r.join(","):r).join("\n");
+  const blob=new Blob([csv],{type:"text/csv"}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="analyst_"+analyst+".csv"; a.click(); URL.revokeObjectURL(url);
+};
+init();
+</script>
+</body>
+</html>
