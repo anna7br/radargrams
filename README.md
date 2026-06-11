@@ -13,7 +13,7 @@ Eastern Alps).
 
 ## Live survey
 
-➡️ **https://<your-username>.github.io/radargrams/**  *(replace with your GitHub Pages URL)*
+➡️ **https://anna7br.github.io/radargrams/**
 
 The page opens with instructions; participants click **Start picking**, trace the
 surface and bed on each radargram, **download** their results as a CSV, and
@@ -41,7 +41,7 @@ sample height.
 
 The radargrams are research data from the MELT.AI project and are provided here
 solely for the purpose of this picking study. They are **© GEORESEARCH** and are
-**not** released for redistribution or other use without permission. Please
+**not** (yet) released for redistribution or other use without permission. Please
 contact the author before reusing any material from this repository.
 
 ## Contact
