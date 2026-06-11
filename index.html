@@ -3,166 +3,77 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GPR surface &amp; bed picking survey</title>
+<title>GPR surface &amp; bed picking — participant instructions</title>
 <style>
-  :root { font-family: system-ui, sans-serif; }
-  body { margin: 0; color: #111; background: #f5f6f8; }
-  header { padding: 8px 14px; background: #1f3b57; color: #fff; display:flex; gap:14px; align-items:center; flex-wrap:wrap;}
-  header b { font-size: 15px; }
-  #bar { padding: 8px 14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:#fff; border-bottom:1px solid #ddd;}
-  button { padding:6px 10px; border:1px solid #bbb; background:#fff; border-radius:5px; cursor:pointer; font-size:13px;}
-  button:hover { background:#eef3f8; }
-  button.primary { background:#1f6fc4; color:#fff; border-color:#1f6fc4; }
-  button.act-surface { background:#00b3b3; color:#fff; border-color:#00b3b3; }
-  button.act-bed { background:#ff8c00; color:#fff; border-color:#ff8c00; }
-  canvas { display:block; background:#222; cursor:crosshair; touch-action:none; }
-  #status { padding:6px 14px; font-size:13px; color:#333; background:#fff; border-top:1px solid #ddd;}
-  label.chk { font-size:13px; display:flex; gap:5px; align-items:center; }
-  .sep { width:1px; height:22px; background:#ccc; margin:0 4px; }
-  .hint { font-size:12px; color:#cdd; }
+  :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#1b2430; }
+  body { margin:0; background:#f5f6f8; }
+  header { background:#1f3b57; color:#fff; padding:22px 20px; }
+  header h1 { margin:0; font-size:21px; }
+  header p { margin:6px 0 0; color:#cfe0f0; font-size:14px; }
+  main { max-width:760px; margin:0 auto; padding:24px 20px 60px; }
+  .card { background:#fff; border:1px solid #e2e6ea; border-radius:10px; padding:20px 22px; margin:18px 0; }
+  h2 { font-size:17px; margin:0 0 10px; }
+  p, li { line-height:1.55; font-size:15px; }
+  ul { padding-left:20px; } li { margin:6px 0; }
+  .surface { color:#008c8c; font-weight:600; }
+  .bed { color:#d97a00; font-weight:600; }
+  .start { text-align:center; margin:30px 0 8px; }
+  a.btn { display:inline-block; color:#fff; text-decoration:none; font-size:18px; font-weight:600;
+          padding:14px 34px; border-radius:8px; background:#1f6fc4; }
+  a.btn:hover { filter:brightness(0.92); }
+  a.upload { background:#2e8b57; }
+  .muted { color:#5a6675; font-size:13px; }
+  kbd { background:#eef1f4; border:1px solid #cdd3da; border-radius:4px; padding:1px 6px; font-size:13px; }
+  ol.steps li { margin:8px 0; }
 </style>
 </head>
 <body>
 <header>
-  <b>GPR surface &amp; bed picking</b>
-  <span class="hint">choose a horizon, then left-click along it &nbsp;&bull;&nbsp; right-drag = pan &nbsp;&bull;&nbsp; wheel = zoom</span>
+  <h1>GPR survey: picking the glacier surface and bed</h1>
+  <p>Inter-analyst comparison of manual reflection picking in UAV-borne ground-penetrating radar &nbsp;•&nbsp; ~15–25 min &nbsp;•&nbsp; runs in your browser</p>
 </header>
-<div id="bar">
-  <span style="font-size:13px;">Picking:</span>
-  <button id="bSurface">Surface (s)</button>
-  <button id="bBed">Bed (b)</button>
-  <span class="sep"></span>
-  <button id="prev">&larr; Prev</button>
-  <button id="next">Next &rarr;</button>
-  <button id="undo">Undo point</button>
-  <button id="clear">Clear horizon</button>
-  <button id="fit">Reset view</button>
-  <label class="chk"><input type="checkbox" id="uninterp"> bed not interpretable</label>
-  <span style="flex:1"></span>
-  <button id="download" class="primary">Download my results (CSV)</button>
-</div>
-<canvas id="cv"></canvas>
-<div id="status"></div>
+<main>
+  <div class="card">
+    <h2>What this is</h2>
+    <p>Thank you for taking part! We are measuring how consistently experts pick reflections in glacier GPR radargrams. On each image you draw <span class="surface">two lines</span>: the glacier <span class="surface">surface</span> and the <span class="bed">bed</span>. There are no graded "right" answers — we want your natural interpretation, so please pick as you normally would.</p>
+  </div>
 
-<script src="images.js"></script>
-<script>
-/* ===================== CONFIG: edit if images are hosted elsewhere ===================== */
-const BASE_URL = "";          // "" = same folder as this file; else "https://host/path/"
-let   IMAGES   = (window.IMAGES || []).slice();          // if empty, fetch BASE_URL + "images.json"
-/* ====================================================================================== */
+  <div class="card">
+    <h2>How to pick</h2>
+    <ul>
+      <li>Choose the horizon with the <span class="surface">Surface (s)</span> / <span class="bed">Bed (b)</span> buttons (or the <kbd>s</kbd> / <kbd>b</kbd> keys). Surface draws in cyan, bed in orange.</li>
+      <li><span class="surface">Surface:</span> left-click along the air–glacier (or, under winter snow, snow–ice) reflection — the top of the ice.</li>
+      <li><span class="bed">Bed:</span> left-click along the ice–bedrock reflection — the bottom of the ice. Where the ice lies above an air-filled cavity, follow the <em>bottom of the ice</em> (the ice–air interface inside the cavity), not the rock below.</li>
+      <li>Add points left to right. <strong>Zoom</strong> with the mouse wheel, <strong>pan</strong> by dragging with the <strong>right</strong> mouse button. "Undo point" (<kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd>) and "Clear horizon" act on the horizon you are currently picking.</li>
+      <li>If you <strong>cannot interpret the bed</strong> on an image, tick "bed not interpretable" (you can still pick the surface) and move on — please do not guess.</li>
+      <li>Move between images with <strong>Next / Prev</strong> (or the arrow keys); your lines are kept.</li>
+    </ul>
+  </div>
 
-const COLORS = { surface:"#00d6d6", bed:"#ff8c00" };
-const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-let W = 1100, H = 660;
-function resize(){ W=Math.max(600,window.innerWidth-2); H=Math.max(380,window.innerHeight-150); cv.width=W; cv.height=H; draw(); }
-window.addEventListener('resize', resize);
+  <div class="card">
+    <h2>When you are finished</h2>
+    <ol class="steps">
+      <li>Click <strong>Download my results (CSV)</strong> in the tool — this saves a file named <code>analyst_YOURNAME.csv</code>.</li>
+      <li><strong>Upload that file</strong> via the green button below (you will be asked to sign in to Google so the file is saved to our project drive).</li>
+    </ol>
+  </div>
 
-let analyst = (prompt("Please enter your name or initials (used in the result file name):","")||"anon")
-              .trim().replace(/[^A-Za-z0-9_-]/g,"_") || "anon";
-let active = "surface";
-let idx = 0;
-const ann = {};
-let img = new Image();
-let view = {s:1, tx:0, ty:0};
-let panning=false, panStart=null;
+  <div class="card">
+    <h2>Please</h2>
+    <ul>
+      <li>Work <strong>independently</strong> — do not discuss or compare picks with other participants.</li>
+      <li>Pick <strong>both</strong> horizons on every image you can.</li>
+      <li>Try to finish in <strong>one sitting</strong>: your work is held in the browser tab and is saved only when you click Download. Nothing is sent anywhere until you upload.</li>
+    </ul>
+  </div>
 
-async function init(){
-  resize();
-  if (IMAGES.length === 0){
-    try { IMAGES = await (await fetch(BASE_URL+"images.json")).json(); }
-    catch(e){ alert("No image list. Provide images.json next to the images, or set IMAGES at top of file."); return; }
-  }
-  IMAGES.forEach(fn => ann[fn] = ann[fn] || {surface:[], bed:[], uninterp:false, w:0, h:0, loaded:false});
-  setActive("surface"); load(0);
-}
-function setActive(b){ active=b;
-  document.getElementById('bSurface').className = b==="surface"?"act-surface":"";
-  document.getElementById('bBed').className     = b==="bed"?"act-bed":"";
-  status();
-}
-function load(i){
-  if (i<0||i>=IMAGES.length) return; idx=i; const fn=IMAGES[idx];
-  document.getElementById('uninterp').checked = ann[fn].uninterp;
-  img = new Image();
-  img.onload = ()=>{ ann[fn].w=img.naturalWidth; ann[fn].h=img.naturalHeight; ann[fn].loaded=true; fitView(); draw(); };
-  img.onerror = ()=>{ ctx.fillStyle="#fff"; ctx.fillText("Could not load "+fn,20,20); status(); };
-  img.src = BASE_URL + fn; status();
-}
-function fitView(){ const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
-  view.s=s; view.tx=(W-img.naturalWidth*s)/2; view.ty=(H-img.naturalHeight*s)/2; }
-function toImg(cx,cy){ return {x:(cx-view.tx)/view.s, y:(cy-view.ty)/view.s}; }
-function toScr(p){ return {x:view.tx+p.x*view.s, y:view.ty+p.y*view.s}; }
-
-function drawLine(pts,color){
-  if(pts.length){ ctx.lineWidth=2; ctx.strokeStyle=color; ctx.fillStyle=color;
-    ctx.beginPath(); pts.forEach((p,k)=>{const s=toScr(p); k?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y);}); ctx.stroke();
-    pts.forEach(p=>{const s=toScr(p); ctx.beginPath(); ctx.arc(s.x,s.y,3,0,7); ctx.fill();}); }
-}
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  if(img&&img.complete&&img.naturalWidth)
-    ctx.drawImage(img,0,0,img.naturalWidth,img.naturalHeight,view.tx,view.ty,img.naturalWidth*view.s,img.naturalHeight*view.s);
-  const a=ann[IMAGES[idx]]; if(!a) return;
-  drawLine(a.surface, COLORS.surface); drawLine(a.bed, COLORS.bed);
-  if(a.uninterp){ ctx.fillStyle="rgba(200,0,0,0.85)"; ctx.font="16px sans-serif"; ctx.fillText("marked: bed not interpretable",14,24); }
-}
-function status(){
-  const fn=IMAGES[idx], a=ann[fn]||{surface:[],bed:[]};
-  const done=IMAGES.filter(f=>ann[f]&&((ann[f].surface.length>1&&ann[f].bed.length>1)||ann[f].uninterp)).length;
-  document.getElementById('status').textContent =
-    "Analyst: "+analyst+"  |  image "+(idx+1)+"/"+IMAGES.length+": "+fn+"  |  active: "+active.toUpperCase()
-    +"  |  surface: "+a.surface.length+" pts, bed: "+a.bed.length+" pts  |  completed: "+done+"/"+IMAGES.length;
-}
-cv.addEventListener('mousedown', e=>{
-  if(e.button===2){ panning=true; panStart={x:e.offsetX,y:e.offsetY,tx:view.tx,ty:view.ty}; return; }
-  if(e.button===0){ const p=toImg(e.offsetX,e.offsetY); const a=ann[IMAGES[idx]];
-    p.x=Math.max(0,Math.min(a.w||img.naturalWidth,p.x)); p.y=Math.max(0,Math.min(a.h||img.naturalHeight,p.y));
-    a[active].push(p); draw(); status(); }
-});
-cv.addEventListener('mousemove', e=>{ if(panning){ view.tx=panStart.tx+(e.offsetX-panStart.x); view.ty=panStart.ty+(e.offsetY-panStart.y); draw(); }});
-window.addEventListener('mouseup', ()=>panning=false);
-cv.addEventListener('contextmenu', e=>e.preventDefault());
-cv.addEventListener('wheel', e=>{ e.preventDefault(); const f=e.deltaY<0?1.15:1/1.15;
-  view.tx=e.offsetX-(e.offsetX-view.tx)*f; view.ty=e.offsetY-(e.offsetY-view.ty)*f; view.s*=f; draw(); }, {passive:false});
-
-document.getElementById('bSurface').onclick=()=>setActive("surface");
-document.getElementById('bBed').onclick=()=>setActive("bed");
-document.getElementById('prev').onclick=()=>load(idx-1);
-document.getElementById('next').onclick=()=>load(idx+1);
-document.getElementById('undo').onclick=()=>{ ann[IMAGES[idx]][active].pop(); draw(); status(); };
-document.getElementById('clear').onclick=()=>{ ann[IMAGES[idx]][active]=[]; draw(); status(); };
-document.getElementById('fit').onclick=()=>{ fitView(); draw(); };
-document.getElementById('uninterp').onchange=e=>{ ann[IMAGES[idx]].uninterp=e.target.checked; draw(); status(); };
-window.addEventListener('keydown', e=>{
-  if(e.key==='s') setActive("surface");
-  else if(e.key==='b') setActive("bed");
-  else if(e.key==='ArrowRight') load(idx+1);
-  else if(e.key==='ArrowLeft') load(idx-1);
-  else if((e.ctrlKey||e.metaKey)&&e.key==='z'){ ann[IMAGES[idx]][active].pop(); draw(); status(); }
-});
-
-function csvField(s){ s=String(s); return '"'+s.replace(/"/g,'""')+'"'; }
-document.getElementById('download').onclick=()=>{
-  const rows=[["filename","file_size","file_attributes","region_count","region_id",
-               "region_shape_attributes","region_attributes"]];
-  IMAGES.forEach(fn=>{
-    const a=ann[fn]; if(!a) return;
-    const fa=JSON.stringify({uninterpretable:a.uninterp?"yes":"", img_w:a.w, img_h:a.h});
-    let rid=0;
-    ["surface","bed"].forEach(bnd=>{
-      const pts=a[bnd];
-      if(pts.length>1){
-        const shp=JSON.stringify({name:"polyline",all_points_x:pts.map(p=>Math.round(p.x)),all_points_y:pts.map(p=>Math.round(p.y))});
-        rows.push([fn,-1,fa,1,rid++,shp,JSON.stringify({boundary:bnd})].map(csvField));
-      }
-    });
-    if(rid===0 && a.uninterp) rows.push([fn,-1,fa,0,0,"{}","{}"].map(csvField));
-  });
-  const csv=rows.map(r=>Array.isArray(r)?r.join(","):r).join("\n");
-  const blob=new Blob([csv],{type:"text/csv"}); const url=URL.createObjectURL(blob);
-  const a=document.createElement("a"); a.href=url; a.download="analyst_"+analyst+".csv"; a.click(); URL.revokeObjectURL(url);
-};
-init();
-</script>
+  <div class="start">
+    <a class="btn" href="bed_pick_annotator.html">Start picking &rarr;</a>
+    <div style="margin-top:14px;">
+      <a class="btn upload" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload your results (after picking)</a>
+    </div>
+    <p class="muted">Start opens the picking tool (you'll be asked for your name/initials, used only in the file name). Upload opens the result form in a new tab.</p>
+  </div>
+</main>
 </body>
 </html>

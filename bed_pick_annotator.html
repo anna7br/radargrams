@@ -43,6 +43,7 @@
 </div>
 <canvas id="cv"></canvas>
 <div id="status"></div>
+<div id="uploadbar" style="display:none; padding:10px 14px; background:#e8f5ec; border-top:1px solid #bfe3cc; font-size:14px;">✓ Downloaded. <b>Final step:</b> <a href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener" style="color:#1f6fc4; font-weight:600;">upload your CSV here &rarr;</a> (sign in to Google when prompted).</div>
 
 <script src="images.js"></script>
 <script>
@@ -161,6 +162,7 @@ document.getElementById('download').onclick=()=>{
   const csv=rows.map(r=>Array.isArray(r)?r.join(","):r).join("\n");
   const blob=new Blob([csv],{type:"text/csv"}); const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download="analyst_"+analyst+".csv"; a.click(); URL.revokeObjectURL(url);
+  document.getElementById("uploadbar").style.display="block";
 };
 init();
 </script>
