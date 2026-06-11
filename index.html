@@ -23,6 +23,9 @@
   a.btn:hover { filter:brightness(0.92); }
   a.upload { background:#2e8b57; }
   .muted { color:#5a6675; font-size:13px; }
+  .callout { background:#eef6ff; border:1px solid #bcdcff; border-left:4px solid #1f6fc4;
+             border-radius:6px; padding:12px 14px; margin:12px 0; font-size:14.5px; }
+  .callout strong { color:#1f3b57; }
   kbd { background:#eef1f4; border:1px solid #cdd3da; border-radius:4px; padding:1px 6px; font-size:13px; }
   ol.steps li { margin:8px 0; }
 </style>
@@ -42,7 +45,12 @@
     <h2>How to pick</h2>
     <ul>
       <li>Choose the horizon with the <span class="surface">Surface (s)</span> / <span class="bed">Bed (b)</span> buttons (or the <kbd>s</kbd> / <kbd>b</kbd> keys). Surface draws in cyan, bed in orange.</li>
-      <li><span class="surface">Surface:</span> left-click along the air–glacier (or, under winter snow, snow–ice) reflection — the top of the ice.</li>
+      <li><span class="surface">Surface:</span> left-click along the top reflection of the ice body.</li>
+    </ul>
+    <div class="callout">
+      <strong>⚠ Note — snow cover:</strong> some radargrams were recorded with a <strong>thin layer of winter snow on top of the glacier</strong>. On those images the uppermost reflection is the <strong>air–snow surface</strong>, and a second, slightly deeper reflection marks the <strong>snow–ice interface</strong> (the true top of the ice). Please pick the <span class="surface">surface</span> along the <strong>snow–ice interface</strong> — the top of the ice — not the air–snow surface, so that the snow layer is excluded from the ice thickness.
+    </div>
+    <ul>
       <li><span class="bed">Bed:</span> left-click along the ice–bedrock reflection — the bottom of the ice. Where the ice lies above an air-filled cavity, follow the <em>bottom of the ice</em> (the ice–air interface inside the cavity), not the rock below.</li>
       <li>Add points left to right. <strong>Zoom</strong> with the mouse wheel, <strong>pan</strong> by dragging with the <strong>right</strong> mouse button. "Undo point" (<kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd>) and "Clear horizon" act on the horizon you are currently picking.</li>
       <li>If you <strong>cannot interpret the bed</strong> on an image, tick "bed not interpretable" (you can still pick the surface) and move on — please do not guess.</li>
