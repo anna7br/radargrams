@@ -177,7 +177,7 @@ function status(){
   const fn=IMAGES[idx], a=ann[fn]||{surface:[],bed:[]};
   const done=IMAGES.filter(f=>ann[f]&&((ann[f].surface.length>1&&ann[f].bed.length>1)||ann[f].uninterp)).length;
   document.getElementById('status').textContent =
-    "Analyst: "+analyst+"  |  image "+(idx+1)+"/"+IMAGES.length+": "+fn+"  |  active: "+active.toUpperCase()
+    "Radargram "+(idx+1)+"/"+IMAGES.length+"  |  active: "+active.toUpperCase()
     +"  |  surface: "+a.surface.length+" pts, bed: "+a.bed.length+" pts  |  completed: "+done+"/"+IMAGES.length;
 }
 cv.addEventListener('mousedown', e=>{
