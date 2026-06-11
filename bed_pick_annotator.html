@@ -24,6 +24,12 @@
   label.chk { font-size:13px; display:flex; gap:5px; align-items:center; }
   .sep { width:1px; height:22px; background:#ccc; margin:0 4px; }
   .hint { font-size:12px; color:#cdd; }
+  /* image-loading progress bar */
+  #loadbar { display:none; height:4px; background:#dde3ea; overflow:hidden; position:relative; }
+  #loadbar.on { display:block; }
+  #loadfill { height:100%; width:0%; background:#1f6fc4; transition:width .1s linear; }
+  #loadbar.indet #loadfill { width:35%; position:absolute; animation:indet 1.1s ease-in-out infinite; }
+  @keyframes indet { 0%{left:-35%;} 100%{left:100%;} }
 </style>
 </head>
 <body>
@@ -48,6 +54,7 @@
   <button id="download" class="primary">Download my results (CSV)</button>
   <a id="uploadbtn" class="upbtn" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload results &rarr;</a>
 </div>
+<div id="loadbar"><div id="loadfill"></div></div>
 <canvas id="cv"></canvas>
 <div id="status"></div>
 <div id="uploadbar" style="display:none; padding:10px 14px; background:#e8f5ec; border-top:1px solid #bfe3cc; font-size:14px;">✓ Downloaded. <b>Final step:</b> <a href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener" style="color:#1f6fc4; font-weight:600;">upload your CSV here &rarr;</a> (sign in to Google when prompted).</div>
@@ -87,13 +94,66 @@ function setActive(b){ active=b;
   document.getElementById('bBed').className     = b==="bed"?"act-bed":"";
   status();
 }
+const loadbar  = document.getElementById('loadbar');
+const loadfill = document.getElementById('loadfill');
+let loadToken = 0;   // increments on every load(); lets us ignore stale/aborted loads
+function barShow(determinate){ loadbar.classList.add('on'); loadbar.classList.toggle('indet', !determinate); loadfill.style.width = determinate ? '0%' : ''; }
+function barSet(frac){ loadfill.style.width = Math.max(0, Math.min(100, frac*100)).toFixed(0)+'%'; }
+function barHide(){ loadbar.classList.remove('on','indet'); loadfill.style.width='0%'; }
+
 function load(i){
   if (i<0||i>=IMAGES.length) return; idx=i; const fn=IMAGES[idx];
   document.getElementById('uninterp').checked = ann[fn].uninterp;
-  img = new Image();
-  img.onload = ()=>{ ann[fn].w=img.naturalWidth; ann[fn].h=img.naturalHeight; ann[fn].loaded=true; fitView(); draw(); };
-  img.onerror = ()=>{ ctx.fillStyle="#fff"; ctx.fillText("Could not load "+fn,20,20); status(); };
-  img.src = BASE_URL + fn; status();
+  const url = BASE_URL + fn, token = ++loadToken;
+  status();
+  loadWithProgress(url, fn, token);
+}
+function applyImg(im, fn, token){
+  if (token !== loadToken) return;   // a newer load started; ignore this one
+  img = im; ann[fn].w=img.naturalWidth; ann[fn].h=img.naturalHeight; ann[fn].loaded=true;
+  barHide(); fitView(); draw(); status();
+}
+function plainLoad(url, fn, token){   // no byte-level progress (e.g. file://): show animated bar
+  barShow(false);
+  const im = new Image();
+  im.onload  = ()=> applyImg(im, fn, token);
+  im.onerror = ()=>{ if(token===loadToken){ barHide(); ctx.fillStyle="#fff"; ctx.fillText("Could not load "+fn,20,20); } status(); };
+  im.src = url;
+}
+function blobToImg(blob, fn, token){
+  const u = URL.createObjectURL(blob);
+  const im = new Image();
+  im.onload  = ()=>{ URL.revokeObjectURL(u); applyImg(im, fn, token); };
+  im.onerror = ()=>{ URL.revokeObjectURL(u); if(token===loadToken) barHide(); status(); };
+  im.src = u;
+}
+async function loadWithProgress(url, fn, token){
+  if (!window.fetch || location.protocol === 'file:') return plainLoad(url, fn, token);
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
+    const total = +resp.headers.get('Content-Length') || 0;
+    if (!resp.body || !total) {                 // length unknown -> indeterminate
+      barShow(false);
+      const blob = await resp.blob();
+      if (token!==loadToken) return;
+      return blobToImg(blob, fn, token);
+    }
+    barShow(true);
+    const reader = resp.body.getReader();
+    const chunks = []; let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (token!==loadToken) { reader.cancel(); return; }   // user navigated away
+      chunks.push(value); received += value.length;
+      barSet(received/total);
+    }
+    if (token!==loadToken) return;
+    blobToImg(new Blob(chunks, {type: resp.headers.get('Content-Type')||'image/png'}), fn, token);
+  } catch (err) {
+    if (token===loadToken) plainLoad(url, fn, token);       // fall back (CORS/file:///etc.)
+  }
 }
 function fitView(){ const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
   view.s=s; view.tx=(W-img.naturalWidth*s)/2; view.ty=(H-img.naturalHeight*s)/2; }
