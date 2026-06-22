@@ -160,6 +160,17 @@ function fitView(){ const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
 function toImg(cx,cy){ return {x:(cx-view.tx)/view.s, y:(cy-view.ty)/view.s}; }
 function toScr(p){ return {x:view.tx+p.x*view.s, y:view.ty+p.y*view.s}; }
 
+let seq=0;
+function addPoint(arr,p){            // insert ordered left->right by x, so the line never doubles back
+  p.seq=++seq;
+  let i=arr.findIndex(q=>q.x>p.x); if(i<0) i=arr.length;
+  arr.splice(i,0,p);
+}
+function undoPoint(arr){             // remove the most recently ADDED point, not the left/right-most
+  if(!arr.length) return;
+  let mi=0; for(let k=1;k<arr.length;k++) if((arr[k].seq||0)>(arr[mi].seq||0)) mi=k;
+  arr.splice(mi,1);
+}
 function drawLine(pts,color){
   if(pts.length){ ctx.lineWidth=2; ctx.strokeStyle=color; ctx.fillStyle=color;
     ctx.beginPath(); pts.forEach((p,k)=>{const s=toScr(p); k?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y);}); ctx.stroke();
@@ -184,7 +195,7 @@ cv.addEventListener('mousedown', e=>{
   if(e.button===2){ panning=true; panStart={x:e.offsetX,y:e.offsetY,tx:view.tx,ty:view.ty}; return; }
   if(e.button===0){ const p=toImg(e.offsetX,e.offsetY); const a=ann[IMAGES[idx]];
     p.x=Math.max(0,Math.min(a.w||img.naturalWidth,p.x)); p.y=Math.max(0,Math.min(a.h||img.naturalHeight,p.y));
-    a[active].push(p); draw(); status(); }
+    addPoint(a[active], p); draw(); status(); }
 });
 cv.addEventListener('mousemove', e=>{ if(panning){ view.tx=panStart.tx+(e.offsetX-panStart.x); view.ty=panStart.ty+(e.offsetY-panStart.y); draw(); }});
 window.addEventListener('mouseup', ()=>panning=false);
@@ -196,7 +207,7 @@ document.getElementById('bSurface').onclick=()=>setActive("surface");
 document.getElementById('bBed').onclick=()=>setActive("bed");
 document.getElementById('prev').onclick=()=>load(idx-1);
 document.getElementById('next').onclick=()=>load(idx+1);
-document.getElementById('undo').onclick=()=>{ ann[IMAGES[idx]][active].pop(); draw(); status(); };
+document.getElementById('undo').onclick=()=>{ undoPoint(ann[IMAGES[idx]][active]); draw(); status(); };
 document.getElementById('clear').onclick=()=>{ ann[IMAGES[idx]][active]=[]; draw(); status(); };
 document.getElementById('fit').onclick=()=>{ fitView(); draw(); };
 document.getElementById('uninterp').onchange=e=>{ ann[IMAGES[idx]].uninterp=e.target.checked; draw(); status(); };
@@ -205,7 +216,7 @@ window.addEventListener('keydown', e=>{
   else if(e.key==='b') setActive("bed");
   else if(e.key==='ArrowRight') load(idx+1);
   else if(e.key==='ArrowLeft') load(idx-1);
-  else if((e.ctrlKey||e.metaKey)&&e.key==='z'){ ann[IMAGES[idx]][active].pop(); draw(); status(); }
+  else if((e.ctrlKey||e.metaKey)&&e.key==='z'){ undoPoint(ann[IMAGES[idx]][active]); draw(); status(); }
 });
 
 function csvField(s){ s=String(s); return '"'+s.replace(/"/g,'""')+'"'; }
