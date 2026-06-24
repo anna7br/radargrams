@@ -39,21 +39,38 @@
   .social .or svg { width:34px; height:34px; fill:#a6ce39; }
   kbd { background:#eef1f4; border:1px solid #cdd3da; border-radius:4px; padding:1px 6px; font-size:13px; }
   ol.steps li { margin:8px 0; }
+  header .meta { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; }
+  header .meta span { background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
+                      padding:4px 12px; border-radius:20px; font-size:12.5px; color:#eaf2fb; }
+  .cta { background:#eef6ff; border:1px solid #bcdcff; border-radius:12px; padding:22px 20px; margin:18px 0; text-align:center; }
+  .cta .lead { font-size:15.5px; font-weight:600; color:#1f3b57; margin:0 0 16px; }
+  .cta a.btn { margin:6px; }
+  .callout.warn { background:#fff6e9; border-color:#f4d28a; border-left-color:#e0922a; }
+  .callout.warn strong { color:#8a5410; }
+  h2 .ico { margin-right:7px; }
 </style>
 </head>
 <body>
 <header>
   <h1>GPR survey: picking the glacier surface and bed</h1>
-  <p>Inter-analyst comparison of manual reflection picking in UAV-borne ground-penetrating radar &nbsp;•&nbsp; ~15–25 min &nbsp;•&nbsp; runs in your browser</p>
+  <p>Inter-analyst comparison of manual reflection picking in UAV-borne ground-penetrating radar.</p>
+  <div class="meta"><span>⏱ ~15 minutes</span><span>🗂 15 radargrams</span><span>🌐 runs in your browser</span><span>🔓 no sign-up</span></div>
 </header>
 <main>
   <div class="card">
-    <h2>What this is</h2>
+    <h2><span class="ico">ℹ️</span>What this is</h2>
     <p>Thank you for taking part! We are measuring how consistently experts pick reflections in glacier GPR radargrams. On each image you draw <span class="surface">two lines</span>: the glacier <span class="surface">surface</span> and the <span class="bed">bed</span>. There are no graded "right" answers — we want your natural interpretation, so please pick as you normally would.</p>
   </div>
 
+  <div class="cta">
+    <p class="lead">📖 Please read the instructions below carefully before you start picking.</p>
+    <a class="btn" href="bed_pick_annotator.html">Start picking &rarr;</a>
+    <a class="btn upload" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload your results</a>
+    <p class="muted" style="margin-top:14px;">Start opens the picking tool. You will be asked for your name/initials only when you download your results (used in the file name). Upload opens the results form in a new tab.</p>
+  </div>
+
   <div class="card">
-    <h2>How to pick</h2>
+    <h2><span class="ico">✏️</span>How to pick</h2>
     <ul>
       <li>Choose the horizon with the <span class="surface">Surface (s)</span> / <span class="bed">Bed (b)</span> buttons (or the <kbd>s</kbd> / <kbd>b</kbd> keys). Surface draws in cyan, bed in orange.</li>
       <li><span class="surface">Surface:</span> left-click along the top reflection of the ice body.</li>
@@ -65,20 +82,23 @@
       <li><span class="bed">Bed:</span> left-click along the ice–bedrock reflection — the bottom of the ice. Where the ice lies above an air-filled cavity, follow the <em>bottom of the ice</em> (the ice–air interface inside the cavity), not the rock below.</li>
       <li>Add points left to right. <strong>Zoom</strong> with the mouse wheel, <strong>pan</strong> by dragging with the <strong>right</strong> mouse button. "Undo point" (<kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd>) and "Clear horizon" act on the horizon you are currently picking.</li>
       <li>If you <strong>cannot interpret the bed</strong> on an image, tick "bed not interpretable" (you can still pick the surface) and move on — please do not guess.</li>
-      <li>Move between images with <strong>Next / Prev</strong> (or the arrow keys); your lines are kept.</li>
+      <li>Move between images with <strong>Next / Prev</strong> (or the arrow keys); your lines are kept. The counter in the <strong>top-left corner</strong> shows which radargram you are on (e.g. "Radargram 3 / 15") so you can see how many remain.</li>
     </ul>
+    <div class="callout warn">
+      <strong>Note — image quality varies:</strong> all radargrams were processed together in a single batch with identical settings, so some look clear while others are noisier. Please pick as best you can. If a radargram looks <strong>particularly poor or hard to interpret</strong>, a short comment about it (by email, see below) would be very welcome.
+    </div>
   </div>
 
   <div class="card">
-    <h2>When you are finished</h2>
+    <h2><span class="ico">✅</span>When you are finished</h2>
     <ol class="steps">
-      <li>Click <strong>Download my results (CSV)</strong> in the tool — this saves a file named <code>analyst_YOURNAME.csv</code>.</li>
-      <li><strong>Upload that file</strong> via the green button below (you will be asked to sign in to Google so the file is saved to our project drive).</li>
+      <li>When you have picked the last radargram, a <strong>"thank you" message</strong> appears in the tool. Click <strong>Download my results (CSV)</strong> — this saves a file named <code>analyst_YOURNAME.csv</code>.</li>
+      <li><strong>Upload that file</strong> using the green <strong>Upload results</strong> button (at the top of this page, or inside the picking tool). You will be asked to sign in to Google so the file is saved to our project drive.</li>
     </ol>
   </div>
 
   <div class="card">
-    <h2>Please</h2>
+    <h2><span class="ico">🔎</span>Please</h2>
     <ul>
       <li>Work <strong>independently</strong> — do not discuss or compare picks with other participants.</li>
       <li>Pick <strong>both</strong> horizons on every image you can.</li>
@@ -88,13 +108,10 @@
 
   <div class="start">
     <a class="btn" href="bed_pick_annotator.html">Start picking &rarr;</a>
-    <div style="margin-top:14px;">
-      <a class="btn upload" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload your results (after picking)</a>
-    </div>
-    <p class="muted">Start opens the picking tool (you'll be asked for your name/initials, used only in the file name). Upload opens the result form in a new tab.</p>
+    <p class="muted">Ready? This opens the picking tool. You can return to these instructions anytime via the "? Instructions" button in the tool.</p>
   </div>
   <div class="card">
-    <h2>Thank you</h2>
+    <h2><span class="ico">🙏</span>Thank you</h2>
     <p>Your time and expertise are greatly appreciated — these picks directly support the evaluation of UAV-borne GPR ice-thickness measurements in the <a href="https://www.georesearch.ac.at/en/areas/research/research-projects/project-meltai/" target="_blank" rel="noopener">MELT.AI</a> project. If you have any questions about the task or run into technical problems, please get in touch:</p>
     <p><strong>Anna Siebenbrunner</strong><br>
        GEORESEARCH &amp; Technical University of Munich<br>
