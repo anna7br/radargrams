@@ -20,7 +20,21 @@
   button.act-surface { background:#00b3b3; color:#fff; border-color:#00b3b3; }
   button.act-bed { background:#ff8c00; color:#fff; border-color:#ff8c00; }
   canvas { display:block; background:#222; cursor:crosshair; touch-action:none; }
-  #status { padding:6px 14px; font-size:13px; color:#333; background:#fff; border-top:1px solid #ddd;}
+  #stage { position:relative; }
+  #status { position:absolute; top:10px; left:10px; background:rgba(31,59,87,.9); color:#fff;
+            padding:7px 12px; border-radius:8px; font-size:13px; line-height:1.5; pointer-events:none;
+            box-shadow:0 1px 5px rgba(0,0,0,.3); max-width:70%; }
+  #status .last { color:#ffd27f; font-weight:700; }
+  #status .sub { opacity:.85; font-size:12px; }
+  #donebar { position:absolute; top:16px; left:50%; transform:translateX(-50%); display:none;
+             background:#e8f5ec; border:1px solid #8fcfa6; color:#14532d; padding:14px 40px 14px 18px;
+             border-radius:10px; font-size:14px; line-height:1.5; box-shadow:0 3px 14px rgba(0,0,0,.22);
+             max-width:78%; text-align:center; z-index:6; }
+  #donebar.on { display:block; }
+  #donebar b { color:#14532d; }
+  #doneClose { position:absolute; top:5px; right:7px; border:none; background:transparent; font-size:18px;
+               line-height:1; cursor:pointer; color:#14532d; padding:2px 6px; }
+  #doneClose:hover { background:transparent; }
   label.chk { font-size:13px; display:flex; gap:5px; align-items:center; }
   .sep { width:1px; height:22px; background:#ccc; margin:0 4px; }
   .hint { font-size:12px; color:#cdd; }
@@ -55,8 +69,15 @@
   <a id="uploadbtn" class="upbtn" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload results &rarr;</a>
 </div>
 <div id="loadbar"><div id="loadfill"></div></div>
-<canvas id="cv"></canvas>
-<div id="status"></div>
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="status"></div>
+  <div id="donebar">
+    <button id="doneClose" aria-label="dismiss">&times;</button>
+    <b>🎉 All radargrams done — thank you!</b><br>
+    You have picked every radargram. Now click <b>Download my results (CSV)</b>, then <b>Upload results &rarr;</b> to send us your file.
+  </div>
+</div>
 <div id="uploadbar" style="display:none; padding:10px 14px; background:#e8f5ec; border-top:1px solid #bfe3cc; font-size:14px;">✓ Downloaded. <b>Final step:</b> <a href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener" style="color:#1f6fc4; font-weight:600;">upload your CSV here &rarr;</a> (sign in to Google when prompted).</div>
 
 <script src="images.js"></script>
@@ -184,12 +205,20 @@ function draw(){
   drawLine(a.surface, COLORS.surface); drawLine(a.bed, COLORS.bed);
   if(a.uninterp){ ctx.fillStyle="rgba(200,0,0,0.85)"; ctx.font="16px sans-serif"; ctx.fillText("marked: bed not interpretable",14,24); }
 }
+let doneDismiss=false;
 function status(){
   const fn=IMAGES[idx], a=ann[fn]||{surface:[],bed:[]};
+  const N=IMAGES.length;
   const done=IMAGES.filter(f=>ann[f]&&((ann[f].surface.length>1&&ann[f].bed.length>1)||ann[f].uninterp)).length;
-  document.getElementById('status').textContent =
-    "Radargram "+(idx+1)+"/"+IMAGES.length+"  |  active: "+active.toUpperCase()
-    +"  |  surface: "+a.surface.length+" pts, bed: "+a.bed.length+" pts  |  completed: "+done+"/"+IMAGES.length;
+  const last = idx===N-1;
+  document.getElementById('status').innerHTML =
+    "<b>Radargram "+(idx+1)+" / "+N+"</b>"+(last?" <span class='last'>· last one</span>":"")
+    +"<br><span class='sub'>active: "+active.toUpperCase()
+    +" &nbsp;|&nbsp; surface "+a.surface.length+" pts &middot; bed "+a.bed.length+" pts"
+    +" &nbsp;|&nbsp; completed "+done+" / "+N+"</span>";
+  const db=document.getElementById('donebar');
+  if(done===N){ if(!doneDismiss) db.classList.add('on'); }
+  else { db.classList.remove('on'); doneDismiss=false; }
 }
 cv.addEventListener('mousedown', e=>{
   if(e.button===2){ panning=true; panStart={x:e.offsetX,y:e.offsetY,tx:view.tx,ty:view.ty}; return; }
@@ -210,6 +239,7 @@ document.getElementById('next').onclick=()=>load(idx+1);
 document.getElementById('undo').onclick=()=>{ undoPoint(ann[IMAGES[idx]][active]); draw(); status(); };
 document.getElementById('clear').onclick=()=>{ ann[IMAGES[idx]][active]=[]; draw(); status(); };
 document.getElementById('fit').onclick=()=>{ fitView(); draw(); };
+document.getElementById('doneClose').onclick=()=>{ doneDismiss=true; document.getElementById('donebar').classList.remove('on'); };
 document.getElementById('uninterp').onchange=e=>{ ann[IMAGES[idx]].uninterp=e.target.checked; draw(); status(); };
 window.addEventListener('keydown', e=>{
   if(e.key==='s') setActive("surface");
