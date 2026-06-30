@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GPR surface &amp; bed picking survey</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
   :root { font-family: system-ui, sans-serif; }
   body { margin: 0; color: #111; background: #f5f6f8; }
@@ -41,6 +42,12 @@
   label.chk { font-size:13px; display:flex; gap:5px; align-items:center; }
   .sep { width:1px; height:22px; background:#ccc; margin:0 4px; }
   .hint { font-size:12px; color:#cdd; }
+  .cmaplabel { font-size:13px; }
+  .swatch { display:inline-flex; align-items:center; gap:6px; padding:3px 8px; font-size:13px; }
+  .swatch .grad { width:38px; height:14px; border-radius:3px; border:1px solid #9aa3ad; display:inline-block; }
+  .grad-gray { background:linear-gradient(90deg,#111,#fff); }
+  .grad-seis { background:linear-gradient(90deg,#1d2bd6 0%,#fff 50%,#e21d1d 100%); }
+  .swatch.active { border-color:#1f6fc4; background:#eef3f8; box-shadow:inset 0 0 0 2px #1f6fc4; }
   /* image-loading progress bar */
   #loadbar { display:none; height:4px; background:#dde3ea; overflow:hidden; position:relative; }
   #loadbar.on { display:block; }
@@ -66,7 +73,9 @@
   <button id="undo">Undo point</button>
   <button id="clear">Clear horizon</button>
   <button id="fit">Reset view</button>
-  <label class="chk">Colour: <select id="cmap"><option value="grey">Grey</option><option value="seismic">Seismic (blue–white–red)</option></select></label>
+  <span class="cmaplabel">Colormap:</span>
+  <button class="swatch active" id="cmGray" title="Grayscale"><span class="grad grad-gray"></span>Gray</button>
+  <button class="swatch" id="cmSeis" title="Seismic (blue–white–red)"><span class="grad grad-seis"></span>Seismic</button>
   <label class="chk"><input type="checkbox" id="uninterp"> bed not interpretable</label>
   <span style="flex:1"></span>
   <button id="download" class="primary">Download my results (CSV)</button>
@@ -104,7 +113,7 @@ const ann = {};
 let img = new Image();
 let view = {s:1, tx:0, ty:0};
 let panning=false, panStart=null;
-let cmap="grey";                       // "grey" | "seismic"
+let cmap="gray";                       // "gray" | "seismic"
 let seismicCanvas=null, seismicFor=null, LUT=null;
 
 async function init(){
@@ -138,8 +147,8 @@ function load(i){
 function applyImg(im, fn, token){
   if (token !== loadToken) return;   // a newer load started; ignore this one
   img = im; ann[fn].w=img.naturalWidth; ann[fn].h=img.naturalHeight; ann[fn].loaded=true;
-  seismicCanvas=null; seismicFor=null; ensureSeismic(fn);   // recolour the new image if seismic is on
-  cv.classList.toggle('seismic', cmap==='seismic');
+  seismicCanvas=null; seismicFor=null; ensureSeismic(fn);   // recolor the new image if seismic is on
+  syncCmapUI();
   barHide(); fitView(); draw(); status();
 }
 function plainLoad(url, fn, token){   // no byte-level progress (e.g. file://): show animated bar
@@ -205,7 +214,7 @@ function drawLine(pts,color){
     ctx.beginPath(); pts.forEach((p,k)=>{const s=toScr(p); k?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y);}); ctx.stroke();
     pts.forEach(p=>{const s=toScr(p); ctx.beginPath(); ctx.arc(s.x,s.y,3,0,7); ctx.fill();}); }
 }
-function seismicLUT(){               // grey 0..255 -> diverging blue(0)–white(128)–red(255)
+function seismicLUT(){               // gray 0..255 -> diverging blue(0)–white(128)–red(255)
   if(LUT) return LUT;
   const r=new Uint8Array(256), g=new Uint8Array(256), b=new Uint8Array(256);
   for(let v=0; v<256; v++){
@@ -214,7 +223,7 @@ function seismicLUT(){               // grey 0..255 -> diverging blue(0)–white
   }
   return (LUT={r,g,b});
 }
-function buildSeismic(im){           // recolour the grey image through the LUT (capped size, cached)
+function buildSeismic(im){           // recolor the gray image through the LUT (capped size, cached)
   const MAXD=5000, sc=Math.min(1, MAXD/Math.max(im.naturalWidth, im.naturalHeight));
   const w=Math.max(1,Math.round(im.naturalWidth*sc)), h=Math.max(1,Math.round(im.naturalHeight*sc));
   const c=document.createElement('canvas'); c.width=w; c.height=h;
@@ -229,9 +238,9 @@ function ensureSeismic(fn){
   if(seismicFor===fn && seismicCanvas) return;
   seismicCanvas = (img&&img.naturalWidth) ? buildSeismic(img) : null;
   seismicFor = fn;
-  if(!seismicCanvas){                // local file:// taints the canvas -> revert to grey
-    cmap="grey"; const sel=document.getElementById('cmap'); if(sel) sel.value="grey";
-    alert("The seismic colour map needs the hosted site; it is not available when the file is opened locally (file://). Showing greyscale.");
+  if(!seismicCanvas){                // local file:// taints the canvas -> revert to grayscale
+    cmap="gray";
+    alert("The seismic color map needs the hosted site; it is not available when the file is opened locally (file://). Showing grayscale.");
   }
 }
 function draw(){
@@ -281,7 +290,14 @@ document.getElementById('next').onclick=()=>load(idx+1);
 document.getElementById('undo').onclick=()=>{ undoPoint(ann[IMAGES[idx]][active]); draw(); status(); };
 document.getElementById('clear').onclick=()=>{ ann[IMAGES[idx]][active]=[]; draw(); status(); };
 document.getElementById('fit').onclick=()=>{ fitView(); draw(); };
-document.getElementById('cmap').onchange=e=>{ cmap=e.target.value; ensureSeismic(IMAGES[idx]); cv.classList.toggle('seismic', cmap==='seismic'); draw(); };
+function syncCmapUI(){               // reflect the active colormap in the swatch buttons + cursor
+  document.getElementById('cmGray').classList.toggle('active', cmap==='gray');
+  document.getElementById('cmSeis').classList.toggle('active', cmap==='seismic');
+  cv.classList.toggle('seismic', cmap==='seismic');
+}
+function setCmap(v){ cmap=v; ensureSeismic(IMAGES[idx]); syncCmapUI(); draw(); }  // ensureSeismic may revert to "gray" on file://
+document.getElementById('cmGray').onclick=()=>setCmap('gray');
+document.getElementById('cmSeis').onclick=()=>setCmap('seismic');
 document.getElementById('doneClose').onclick=()=>{ doneDismiss=true; document.getElementById('donebar').classList.remove('on'); };
 document.getElementById('uninterp').onchange=e=>{ ann[IMAGES[idx]].uninterp=e.target.checked; draw(); status(); };
 window.addEventListener('keydown', e=>{
