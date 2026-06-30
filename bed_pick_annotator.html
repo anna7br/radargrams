@@ -19,7 +19,10 @@
   .infobtn:hover { background:#eef1f4; }
   button.act-surface { background:#00b3b3; color:#fff; border-color:#00b3b3; }
   button.act-bed { background:#ff8c00; color:#fff; border-color:#ff8c00; }
-  canvas { display:block; background:#222; cursor:crosshair; touch-action:none; }
+  canvas { display:block; background:#222; touch-action:none;
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%2724%27%3E%3Cg%20stroke%3D%27black%27%20stroke-width%3D%273.5%27%20stroke-linecap%3D%27round%27%3E%3Cline%20x1%3D%2712%27%20y1%3D%271%27%20x2%3D%2712%27%20y2%3D%278%27%2F%3E%3Cline%20x1%3D%2712%27%20y1%3D%2716%27%20x2%3D%2712%27%20y2%3D%2723%27%2F%3E%3Cline%20x1%3D%271%27%20y1%3D%2712%27%20x2%3D%278%27%20y2%3D%2712%27%2F%3E%3Cline%20x1%3D%2716%27%20y1%3D%2712%27%20x2%3D%2723%27%20y2%3D%2712%27%2F%3E%3C%2Fg%3E%3Cg%20stroke%3D%27magenta%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cline%20x1%3D%2712%27%20y1%3D%271%27%20x2%3D%2712%27%20y2%3D%278%27%2F%3E%3Cline%20x1%3D%2712%27%20y1%3D%2716%27%20x2%3D%2712%27%20y2%3D%2723%27%2F%3E%3Cline%20x1%3D%271%27%20y1%3D%2712%27%20x2%3D%278%27%20y2%3D%2712%27%2F%3E%3Cline%20x1%3D%2716%27%20y1%3D%2712%27%20x2%3D%2723%27%20y2%3D%2712%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%271.3%27%20fill%3D%27magenta%27%2F%3E%3C%2Fsvg%3E") 12 12, crosshair; }
+  canvas.seismic {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%2724%27%3E%3Cg%20stroke%3D%27black%27%20stroke-width%3D%273.5%27%20stroke-linecap%3D%27round%27%3E%3Cline%20x1%3D%2712%27%20y1%3D%271%27%20x2%3D%2712%27%20y2%3D%278%27%2F%3E%3Cline%20x1%3D%2712%27%20y1%3D%2716%27%20x2%3D%2712%27%20y2%3D%2723%27%2F%3E%3Cline%20x1%3D%271%27%20y1%3D%2712%27%20x2%3D%278%27%20y2%3D%2712%27%2F%3E%3Cline%20x1%3D%2716%27%20y1%3D%2712%27%20x2%3D%2723%27%20y2%3D%2712%27%2F%3E%3C%2Fg%3E%3Cg%20stroke%3D%27lime%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cline%20x1%3D%2712%27%20y1%3D%271%27%20x2%3D%2712%27%20y2%3D%278%27%2F%3E%3Cline%20x1%3D%2712%27%20y1%3D%2716%27%20x2%3D%2712%27%20y2%3D%2723%27%2F%3E%3Cline%20x1%3D%271%27%20y1%3D%2712%27%20x2%3D%278%27%20y2%3D%2712%27%2F%3E%3Cline%20x1%3D%2716%27%20y1%3D%2712%27%20x2%3D%2723%27%20y2%3D%2712%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%271.3%27%20fill%3D%27lime%27%2F%3E%3C%2Fsvg%3E") 12 12, crosshair; }
   #stage { position:relative; }
   #status { position:absolute; top:10px; left:10px; background:rgba(31,59,87,.9); color:#fff;
             padding:7px 12px; border-radius:8px; font-size:13px; line-height:1.5; pointer-events:none;
@@ -63,6 +66,7 @@
   <button id="undo">Undo point</button>
   <button id="clear">Clear horizon</button>
   <button id="fit">Reset view</button>
+  <label class="chk">Colour: <select id="cmap"><option value="grey">Grey</option><option value="seismic">Seismic (blue–white–red)</option></select></label>
   <label class="chk"><input type="checkbox" id="uninterp"> bed not interpretable</label>
   <span style="flex:1"></span>
   <button id="download" class="primary">Download my results (CSV)</button>
@@ -100,6 +104,8 @@ const ann = {};
 let img = new Image();
 let view = {s:1, tx:0, ty:0};
 let panning=false, panStart=null;
+let cmap="grey";                       // "grey" | "seismic"
+let seismicCanvas=null, seismicFor=null, LUT=null;
 
 async function init(){
   resize();
@@ -132,6 +138,8 @@ function load(i){
 function applyImg(im, fn, token){
   if (token !== loadToken) return;   // a newer load started; ignore this one
   img = im; ann[fn].w=img.naturalWidth; ann[fn].h=img.naturalHeight; ann[fn].loaded=true;
+  seismicCanvas=null; seismicFor=null; ensureSeismic(fn);   // recolour the new image if seismic is on
+  cv.classList.toggle('seismic', cmap==='seismic');
   barHide(); fitView(); draw(); status();
 }
 function plainLoad(url, fn, token){   // no byte-level progress (e.g. file://): show animated bar
@@ -197,10 +205,44 @@ function drawLine(pts,color){
     ctx.beginPath(); pts.forEach((p,k)=>{const s=toScr(p); k?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y);}); ctx.stroke();
     pts.forEach(p=>{const s=toScr(p); ctx.beginPath(); ctx.arc(s.x,s.y,3,0,7); ctx.fill();}); }
 }
+function seismicLUT(){               // grey 0..255 -> diverging blue(0)–white(128)–red(255)
+  if(LUT) return LUT;
+  const r=new Uint8Array(256), g=new Uint8Array(256), b=new Uint8Array(256);
+  for(let v=0; v<256; v++){
+    if(v<=128){ const t=v/128;      r[v]=Math.round(255*t); g[v]=Math.round(255*t); b[v]=255; }
+    else      { const t=(v-128)/127; r[v]=255; g[v]=Math.round(255*(1-t)); b[v]=Math.round(255*(1-t)); }
+  }
+  return (LUT={r,g,b});
+}
+function buildSeismic(im){           // recolour the grey image through the LUT (capped size, cached)
+  const MAXD=5000, sc=Math.min(1, MAXD/Math.max(im.naturalWidth, im.naturalHeight));
+  const w=Math.max(1,Math.round(im.naturalWidth*sc)), h=Math.max(1,Math.round(im.naturalHeight*sc));
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const cx=c.getContext('2d'); cx.drawImage(im,0,0,w,h);
+  let id; try{ id=cx.getImageData(0,0,w,h); }catch(e){ return null; }   // tainted (file://) -> null
+  const d=id.data, lut=seismicLUT();
+  for(let i=0;i<d.length;i+=4){ const v=d[i]; d[i]=lut.r[v]; d[i+1]=lut.g[v]; d[i+2]=lut.b[v]; }
+  cx.putImageData(id,0,0); return c;
+}
+function ensureSeismic(fn){
+  if(cmap!=="seismic") return;
+  if(seismicFor===fn && seismicCanvas) return;
+  seismicCanvas = (img&&img.naturalWidth) ? buildSeismic(img) : null;
+  seismicFor = fn;
+  if(!seismicCanvas){                // local file:// taints the canvas -> revert to grey
+    cmap="grey"; const sel=document.getElementById('cmap'); if(sel) sel.value="grey";
+    alert("The seismic colour map needs the hosted site; it is not available when the file is opened locally (file://). Showing greyscale.");
+  }
+}
 function draw(){
   ctx.clearRect(0,0,W,H);
-  if(img&&img.complete&&img.naturalWidth)
-    ctx.drawImage(img,0,0,img.naturalWidth,img.naturalHeight,view.tx,view.ty,img.naturalWidth*view.s,img.naturalHeight*view.s);
+  if(img&&img.complete&&img.naturalWidth){
+    const useSeis = (cmap==="seismic" && seismicCanvas && seismicFor===IMAGES[idx]);
+    const src = useSeis ? seismicCanvas : img;
+    const sw = useSeis ? src.width : img.naturalWidth;
+    const sh = useSeis ? src.height : img.naturalHeight;
+    ctx.drawImage(src,0,0,sw,sh,view.tx,view.ty,img.naturalWidth*view.s,img.naturalHeight*view.s);
+  }
   const a=ann[IMAGES[idx]]; if(!a) return;
   drawLine(a.surface, COLORS.surface); drawLine(a.bed, COLORS.bed);
   if(a.uninterp){ ctx.fillStyle="rgba(200,0,0,0.85)"; ctx.font="16px sans-serif"; ctx.fillText("marked: bed not interpretable",14,24); }
@@ -239,6 +281,7 @@ document.getElementById('next').onclick=()=>load(idx+1);
 document.getElementById('undo').onclick=()=>{ undoPoint(ann[IMAGES[idx]][active]); draw(); status(); };
 document.getElementById('clear').onclick=()=>{ ann[IMAGES[idx]][active]=[]; draw(); status(); };
 document.getElementById('fit').onclick=()=>{ fitView(); draw(); };
+document.getElementById('cmap').onchange=e=>{ cmap=e.target.value; ensureSeismic(IMAGES[idx]); cv.classList.toggle('seismic', cmap==='seismic'); draw(); };
 document.getElementById('doneClose').onclick=()=>{ doneDismiss=true; document.getElementById('donebar').classList.remove('on'); };
 document.getElementById('uninterp').onchange=e=>{ ann[IMAGES[idx]].uninterp=e.target.checked; draw(); status(); };
 window.addEventListener('keydown', e=>{
