@@ -59,7 +59,7 @@
 <body>
 <header>
   <b>GPR surface &amp; bed picking</b>
-  <span class="hint">choose a horizon, then left-click along it &nbsp;&bull;&nbsp; right-drag = pan &nbsp;&bull;&nbsp; wheel = zoom</span>
+  <span class="hint">choose a horizon, then left-click along it &nbsp;&bull;&nbsp; drag a point to move it &nbsp;&bull;&nbsp; right-drag = pan &nbsp;&bull;&nbsp; wheel = zoom</span>
 </header>
 <div id="bar">
   <a id="infobtn" class="infobtn" href="index.html" target="_blank" rel="noopener" title="Open the instructions in a new tab">? Instructions</a>
@@ -113,6 +113,7 @@ const ann = {};
 let img = new Image();
 let view = {s:1, tx:0, ty:0};
 let panning=false, panStart=null;
+let dragPt=null, dragArr=null; const HIT=9;   // for moving an existing point (hit radius, screen px)
 let cmap="gray";                       // "gray" | "seismic"
 let seismicCanvas=null, seismicFor=null, LUT=null;
 
@@ -197,6 +198,12 @@ function fitView(){ const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
   view.s=s; view.tx=(W-img.naturalWidth*s)/2; view.ty=(H-img.naturalHeight*s)/2; }
 function toImg(cx,cy){ return {x:(cx-view.tx)/view.s, y:(cy-view.ty)/view.s}; }
 function toScr(p){ return {x:view.tx+p.x*view.s, y:view.ty+p.y*view.s}; }
+function hitPoint(sx,sy){            // nearest point of the ACTIVE horizon within HIT px, else null
+  const a=ann[IMAGES[idx]]; if(!a) return null;
+  let best=null, bd=HIT*HIT;
+  for(const p of a[active]){ const s=toScr(p); const dx=s.x-sx, dy=s.y-sy, d=dx*dx+dy*dy; if(d<bd){ bd=d; best=p; } }
+  return best;
+}
 
 let seq=0;
 function addPoint(arr,p){            // insert ordered left->right by x, so the line never doubles back
@@ -273,12 +280,25 @@ function status(){
 }
 cv.addEventListener('mousedown', e=>{
   if(e.button===2){ panning=true; panStart={x:e.offsetX,y:e.offsetY,tx:view.tx,ty:view.ty}; return; }
-  if(e.button===0){ const p=toImg(e.offsetX,e.offsetY); const a=ann[IMAGES[idx]];
+  if(e.button===0){
+    const grab=hitPoint(e.offsetX,e.offsetY);
+    if(grab){ dragPt=grab; dragArr=ann[IMAGES[idx]][active]; cv.style.cursor="grabbing"; return; }  // move existing point
+    const p=toImg(e.offsetX,e.offsetY); const a=ann[IMAGES[idx]];
     p.x=Math.max(0,Math.min(a.w||img.naturalWidth,p.x)); p.y=Math.max(0,Math.min(a.h||img.naturalHeight,p.y));
     addPoint(a[active], p); draw(); status(); }
 });
-cv.addEventListener('mousemove', e=>{ if(panning){ view.tx=panStart.tx+(e.offsetX-panStart.x); view.ty=panStart.ty+(e.offsetY-panStart.y); draw(); }});
-window.addEventListener('mouseup', ()=>panning=false);
+cv.addEventListener('mousemove', e=>{
+  if(panning){ view.tx=panStart.tx+(e.offsetX-panStart.x); view.ty=panStart.ty+(e.offsetY-panStart.y); draw(); return; }
+  if(dragPt){                                   // reposition the grabbed point
+    const a=ann[IMAGES[idx]], p=toImg(e.offsetX,e.offsetY);
+    dragPt.x=Math.max(0,Math.min(a.w||img.naturalWidth,p.x));
+    dragPt.y=Math.max(0,Math.min(a.h||img.naturalHeight,p.y));
+    dragArr.sort((u,v)=>u.x-v.x);               // keep the line ordered left -> right
+    draw(); return;
+  }
+  cv.style.cursor = hitPoint(e.offsetX,e.offsetY) ? "grab" : "";   // hover cue over a draggable point
+});
+window.addEventListener('mouseup', ()=>{ panning=false; if(dragPt){ dragPt=null; dragArr=null; cv.style.cursor=""; } });
 cv.addEventListener('contextmenu', e=>e.preventDefault());
 cv.addEventListener('wheel', e=>{ e.preventDefault(); const f=e.deltaY<0?1.15:1/1.15;
   view.tx=e.offsetX-(e.offsetX-view.tx)*f; view.ty=e.offsetY-(e.offsetY-view.ty)*f; view.s*=f; draw(); }, {passive:false});
