@@ -54,6 +54,22 @@
   #loadfill { height:100%; width:0%; background:#1f6fc4; transition:width .1s linear; }
   #loadbar.indet #loadfill { width:35%; position:absolute; animation:indet 1.1s ease-in-out infinite; }
   @keyframes indet { 0%{left:-35%;} 100%{left:100%;} }
+  /* upload reminder modal + pulsing upload button */
+  #uploadModal { display:none; position:fixed; inset:0; background:rgba(10,18,28,.55); z-index:50;
+                 align-items:center; justify-content:center; }
+  #uploadModal.on { display:flex; }
+  .umodal-card { background:#fff; max-width:470px; margin:16px; padding:26px 28px; border-radius:14px;
+                 box-shadow:0 12px 44px rgba(0,0,0,.4); text-align:center; }
+  .umodal-h { font-size:20px; font-weight:700; color:#14532d; margin-bottom:10px; }
+  .umodal-card p { font-size:15px; line-height:1.55; color:#25303c; margin:0; }
+  .umodal-btn { display:inline-block; margin:16px 0 4px; background:#2e8b57; color:#fff; text-decoration:none;
+                font-size:18px; font-weight:700; padding:14px 32px; border-radius:10px; }
+  .umodal-btn:hover { filter:brightness(.94); }
+  .umodal-note { font-size:12.5px; color:#5a6675; margin-top:8px; }
+  .umodal-done { display:block; margin:18px auto 0; background:transparent; border:none; color:#1f6fc4;
+                 font-size:13px; text-decoration:underline; cursor:pointer; }
+  @keyframes upulse { 0%,100%{ box-shadow:0 0 0 0 rgba(46,139,87,.65);} 50%{ box-shadow:0 0 0 7px rgba(46,139,87,0);} }
+  .pulse { animation:upulse 1.3s ease-out infinite; }
 </style>
 </head>
 <body>
@@ -79,7 +95,7 @@
   <label class="chk"><input type="checkbox" id="uninterp"> bed not interpretable</label>
   <span style="flex:1"></span>
   <button id="download" class="primary">Download my results (CSV)</button>
-  <a id="uploadbtn" class="upbtn" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload results &rarr;</a>
+  <a id="uploadbtn" class="upbtn upload-link" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload results &rarr;</a>
 </div>
 <div id="loadbar"><div id="loadfill"></div></div>
 <div id="stage">
@@ -91,7 +107,17 @@
     You have picked every radargram. Now click <b>Download my results (CSV)</b>, then <b>Upload results &rarr;</b> to send us your file.
   </div>
 </div>
-<div id="uploadbar" style="display:none; padding:10px 14px; background:#e8f5ec; border-top:1px solid #bfe3cc; font-size:14px;">✓ Downloaded. <b>Final step:</b> <a href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener" style="color:#1f6fc4; font-weight:600;">upload your CSV here &rarr;</a> (sign in to Google when prompted).</div>
+<div id="uploadbar" style="display:none; padding:10px 14px; background:#e8f5ec; border-top:1px solid #bfe3cc; font-size:14px;">✓ Downloaded. <b>Final step:</b> <a class="upload-link" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener" style="color:#1f6fc4; font-weight:600;">upload your CSV here &rarr;</a> (sign in to Google when prompted).</div>
+
+<div id="uploadModal">
+  <div class="umodal-card">
+    <div class="umodal-h">✅ File downloaded — one last step!</div>
+    <p>Your picks were saved to a file on your computer, but they are <b>not submitted yet</b>. Please upload the CSV now so we actually receive your results — otherwise your work is lost to us.</p>
+    <a class="umodal-btn upload-link" id="modalUpload" href="https://forms.gle/2TRPgWza2fEgsWfW7" target="_blank" rel="noopener">Upload results now &rarr;</a>
+    <div class="umodal-note">The upload form opens in a new tab (sign in to Google when prompted).</div>
+    <button id="modalDone" class="umodal-done">I have uploaded my file — close this</button>
+  </div>
+</div>
 
 <script src="images.js"></script>
 <script>
@@ -107,6 +133,7 @@ function resize(){ W=Math.max(600,window.innerWidth-2); H=Math.max(380,window.in
 window.addEventListener('resize', resize);
 
 let analyst = "";   // asked for at Download time, not before picking
+let downloaded=false, uploadClicked=false;   // to make sure results actually get uploaded
 let active = "surface";
 let idx = 0;
 const ann = {};
@@ -355,7 +382,26 @@ document.getElementById('download').onclick=()=>{
   const blob=new Blob([csv],{type:"text/csv"}); const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download="analyst_"+analyst+".csv"; a.click(); URL.revokeObjectURL(url);
   document.getElementById("uploadbar").style.display="block";
+  downloaded=true;
+  document.getElementById("uploadModal").classList.add("on");      // unmissable reminder
+  document.getElementById("uploadbtn").classList.add("pulse");     // keep the top button flashing
 };
+
+// clicking any upload link counts as "went to upload" -> stop nagging
+document.querySelectorAll(".upload-link").forEach(el=>el.addEventListener("click", ()=>{
+  uploadClicked=true;
+  document.getElementById("uploadbtn").classList.remove("pulse");
+  document.getElementById("uploadModal").classList.remove("on");
+}));
+document.getElementById("modalDone").onclick=()=>{
+  uploadClicked=true;
+  document.getElementById("uploadModal").classList.remove("on");
+  document.getElementById("uploadbtn").classList.remove("pulse");
+};
+// warn if they downloaded but never went to the upload form before leaving
+window.addEventListener("beforeunload", e=>{
+  if(downloaded && !uploadClicked){ e.preventDefault(); e.returnValue=""; }
+});
 init();
 </script>
 </body>
